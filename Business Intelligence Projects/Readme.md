@@ -1,8 +1,8 @@
 # Power-BI
 
-![](snaps/Customer Detail.png)
-![](snaps/Execute Summary.png)
-![](snaps/product Detail.png)
+![](snaps/CustomerDetail.png)
+![](snaps/ExecuteSummary.png)
+![](snaps/productDetail.png)
 
 # Tableau
 
