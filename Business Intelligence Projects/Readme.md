@@ -2,7 +2,7 @@
 
 ![](snaps/Customer Detail.png)
 ![](snaps/Execute Summary.png)
-![](snaps/Product Detail.png)
+![](snaps/product Detail.png)
 
 # Tableau
 
