@@ -102,3 +102,37 @@ def predict():
         
 if __name__ == "__main__":
     app.run(debug=True)
+
+import logging
+import os
+from airflow.models import DAG
+from airflow.utils.dag_cycle_tester import test_cycle
+
+# Configure logging to write to a file
+logging.basicConfig(
+    filename=os.path.join(os.getcwd(), 'logs', 'dag_validation.log'),
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s %(message)s'
+)
+
+# Define your DAG here
+dag = DAG(
+    dag_id='example_dag',
+    schedule_interval=None
+)
+
+# Validate the DAG for any cyclical dependencies
+cycle_errors = test_cycle(dag)
+if cycle_errors:
+    logging.error("Cyclical dependencies found in DAG")
+    for error in cycle_errors:
+        logging.error(error)
+
+# Validate the DAG for any syntax errors or other compilation issues
+try:
+    dag_bag = dag.parse(os.path.join(os.getcwd(), 'dags', 'example_dag.py'))
+except Exception as e:
+    logging.error("Error parsing DAG")
+    logging.error(str(e))
+else:
+    logging.info("DAG parsed successfully")
