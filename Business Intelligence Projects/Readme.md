@@ -234,37 +234,37 @@ import os
 import sys
 from airflow.utils.dag_processing import SimpleDag
 
-# Define the path to your DAG files directory
+#Define the path to your DAG files directory
 dag_dir = os.path.join(os.getcwd(), 'dags')
 
-# Define the path to your log file
+#Define the path to your log file
 log_file = os.path.join(os.getcwd(), 'logs', 'dag_validation.log')
 
-# Create a logger
+#reate a logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
 
-# Create a file handler for the log file
+#Create a file handler for the log file
 file_handler = logging.FileHandler(log_file)
 file_handler.setLevel(logging.ERROR)
 
-# Create a formatter for the log messages
+#Create a formatter for the log messages
 formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 file_handler.setFormatter(formatter)
 
-# Add the file handler to the logger
+#Add the file handler to the logger
 logger.addHandler(file_handler)
 
-# Get a list of all DAG files in the DAG directory
+#Get a list of all DAG files in the DAG directory
 dag_files = [os.path.join(dag_dir, f) for f in os.listdir(dag_dir) if f.endswith('.py')]
 
-# Validate each DAG file and log any exceptions
+#Validate each DAG file and log any exceptions
 for dag_file in dag_files:
     try:
         SimpleDag(os.path.basename(dag_file).replace('.py', ''), dag_file=dag_file)
     except Exception as e:
         logger.exception(f'Error validating DAG file {dag_file}: {e}')
 
-# If there are any exceptions, exit with a non-zero status code
+#If there are any exceptions, exit with a non-zero status code
 if logger.hasHandlers():
     sys.exit(1)
