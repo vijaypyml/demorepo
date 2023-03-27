@@ -136,3 +136,35 @@ except Exception as e:
     logging.error(str(e))
 else:
     logging.info("DAG parsed successfully")
+
+import logging
+import os
+from airflow.models import DAG
+from airflow.utils.dates import days_ago
+
+# Set up logging
+logging.basicConfig(filename='validation.log', level=logging.ERROR)
+
+# Define the directory where your DAG files are stored
+dag_directory = '/path/to/dag/files'
+
+# Loop over all the files in the directory
+for filename in os.listdir(dag_directory):
+    if filename.endswith('.py'):
+        # Import the DAG file
+        module_name = filename[:-3]
+        module = __import__(module_name)
+        globals()[module_name] = module
+
+        # Validate the DAG
+        try:
+            dag = module.dag
+            dag = DAG(dag_id=dag.dag_id,
+                      default_args=dag.default_args,
+                      schedule_interval=dag.schedule_interval,
+                      start_date=dag.start_date)
+            dag.safe_dag()
+        except Exception as e:
+            # Log any exceptions to the validation log
+            logging.error(f'Error in {filename}: {str(e)}')
+
