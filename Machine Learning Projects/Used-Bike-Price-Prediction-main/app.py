@@ -168,3 +168,30 @@ for filename in os.listdir(dag_directory):
             # Log any exceptions to the validation log
             logging.error(f'Error in {filename}: {str(e)}')
 
+import os
+import pytest
+from airflow import DAG
+from airflow.models import DagBag
+
+DAGS_FOLDER = '/path/to/dags/folder'
+
+@pytest.fixture(scope='module')
+def dagbag():
+    dagbag = DagBag(dag_folder=DAGS_FOLDER)
+    assert len(dagbag.import_errors) == 0, 'DAG import failures'
+    return dagbag
+
+@pytest.mark.parametrize('dag_id', [dag_id for dag_id in dagbag().dags])
+def test_dag_integrity(dag_id):
+    dag = dagbag().dags[dag_id]
+    assert len(dag.tasks) > 0, f'DAG {dag_id} has no tasks'
+    assert isinstance(dag, DAG), f'{dag_id} is not of type DAG'
+
+def test_dag_syntax():
+    for root, _, files in os.walk(DAGS_FOLDER):
+        for file in files:
+            if file.endswith('.py'):
+                filepath = os.path.join(root, file)
+                with open(filepath, 'r') as f:
+                    source = f.read()
+                compile(source, filepath, 'exec')
