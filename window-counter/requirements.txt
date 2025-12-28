@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+streamlit
+supervision
+sahi
+groundingdino-py
+segment-anything
+ultralytics
+opencv-python
+numpy
+Pillow
+requests
