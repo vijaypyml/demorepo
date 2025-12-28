@@ -10,6 +10,7 @@ from analysis.technicals import calculate_technicals
 from analysis.backtest import run_backtest
 from analysis.seasonality import analyze_seasonality
 from ui.backtest_view import render_backtest_tab
+from ui.portfolio_view import render_portfolio_tab
 
 # Page Configuration
 st.set_page_config(page_title="Nifty 100 Analyst", layout="wide", page_icon="📈")
@@ -45,7 +46,7 @@ if not df.empty:
     df = calculate_technicals(df)
     
     # Tabs for different Views
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(["Charts", "Comparison", "Fundamentals", "Backtest", "Seasonality"])
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["Charts", "Comparison", "Fundamentals", "Backtest", "Seasonality", "Portfolio Study"])
     
     # --- TAB 1: CHARTS ---
     with tab1:
@@ -80,6 +81,10 @@ if not df.empty:
     # --- TAB 5: SEASONALITY ---
     with tab5:
         render_seasonality_tab(df)
+
+    # --- TAB 6: PORTFOLIO STUDY ---
+    with tab6:
+        render_portfolio_tab()
 
 else:
     st.error(f"Could not fetch data for {ticker}. Please check the symbol.")
