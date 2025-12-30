@@ -1,0 +1,64 @@
+# Model Weights and Heavy Model Files
+*.pt
+*.pth
+*.h5
+*.onnx
+*.pb
+*.tflite
+
+# Data and Datasets
+*.csv
+*.xlsx
+*.xls
+*.pkl
+*.pickle
+*.parquet
+*.jsonl
+# Keep small json/xml configurations usually, but ignore large data dumps if any
+# *.json 
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.env
+.venv
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Jupyter Notebooks (optional, often contain large output)
+.ipynb_checkpoints
+
+# OS Generated Files
+.DS_Store
+.DS_Store?
+._*
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+*.log.*
+
+# Media
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.wav
+*.mp3
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
