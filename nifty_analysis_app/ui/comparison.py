@@ -14,7 +14,8 @@ def render_comparison_view(sym1, sym2):
     # --- PRICE PERFORMANCE CHART ---
     st.subheader("Comparative Chart")
     
-    metric = st.selectbox("Metric to Plot", ["Relative Return", "RSI", "Closing Price"])
+    with st.expander("⚙️ Chart Settings", expanded=False):
+        metric = st.selectbox("Metric to Plot", ["Relative Return", "RSI", "Closing Price"])
     
     # Fetch histories
     df1 = get_stock_price_history(sym1, period="1y")

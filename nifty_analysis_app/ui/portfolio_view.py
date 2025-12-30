@@ -9,70 +9,71 @@ def render_portfolio_tab():
     col1, col2 = st.columns([1, 2])
     
     with col1:
-        st.subheader("Configuration")
-        
-        # User Limit Input: Years
-        years = st.number_input("Analysis Duration (Years)", min_value=1, max_value=20, value=2)
-        period = f"{years}y"
-        
-        # Default Tickers
-        default_tickers_map = {
-            "^NSEI": "Nifty 50",
-            "GC=F": "Gold",
-            "SI=F": "Silver",
-            "SETF10GILT.NS": "SBI 10Yr Gilt (Bonds)"
-        }
-        
-        # Additional Known Tickers for mapping
-        known_tickers_map = {
-            "AAPL": "Apple",
-            "MSFT": "Microsoft", 
-            "GOOG": "Google",
-            "TSLA": "Tesla",
-            "BTC-USD": "Bitcoin",
-            "ETH-USD": "Ethereum",
-            "^TNX": "US 10Y Yield",
-            "RELIANCE.NS": "Reliance Ind",
-            "TCS.NS": "TCS",
-            "INFY.NS": "Infosys",
-            "HDFCBANK.NS": "HDFC Bank"
-        }
-        
-        full_ticker_map = {**default_tickers_map, **known_tickers_map}
-        
-        default_tickers = list(default_tickers_map.keys())
-        
-        # User Input: Tickers
-        # Ensure session state for multiselect key exists if not already
-        if "portfolio_ticker_select" not in st.session_state:
-            st.session_state["portfolio_ticker_select"] = default_tickers
+        with st.expander("⚙️ Portfolio Settings", expanded=True):
+            st.subheader("Configuration")
+            
+            # User Limit Input: Years
+            years = st.number_input("Analysis Duration (Years)", min_value=1, max_value=20, value=2)
+            period = f"{years}y"
+            
+            # Default Tickers
+            default_tickers_map = {
+                "^NSEI": "Nifty 50",
+                "GC=F": "Gold",
+                "SI=F": "Silver",
+                "SETF10GILT.NS": "SBI 10Yr Gilt (Bonds)"
+            }
+            
+            # Additional Known Tickers for mapping
+            known_tickers_map = {
+                "AAPL": "Apple",
+                "MSFT": "Microsoft", 
+                "GOOG": "Google",
+                "TSLA": "Tesla",
+                "BTC-USD": "Bitcoin",
+                "ETH-USD": "Ethereum",
+                "^TNX": "US 10Y Yield",
+                "RELIANCE.NS": "Reliance Ind",
+                "TCS.NS": "TCS",
+                "INFY.NS": "Infosys",
+                "HDFCBANK.NS": "HDFC Bank"
+            }
+            
+            full_ticker_map = {**default_tickers_map, **known_tickers_map}
+            
+            default_tickers = list(default_tickers_map.keys())
+            
+            # User Input: Tickers
+            # Ensure session state for multiselect key exists if not already
+            if "portfolio_ticker_select" not in st.session_state:
+                st.session_state["portfolio_ticker_select"] = default_tickers
 
-        tickers = st.multiselect(
-            "Select Assets for Portfolio",
-            options=default_tickers + ["AAPL", "MSFT", "GOOG", "TSLA", "BTC-USD", "ETH-USD", "RELIANCE.NS", "TCS.NS", "INFY.NS", "HDFCBANK.NS"],
-            default=default_tickers,
-            format_func=lambda x: full_ticker_map.get(x, x),
-            key="portfolio_ticker_select"
-        )
-        
-        # Allow custom tickers
-        custom_tickers = st.text_input("Add Custom Tickers (comma separated, e.g. INFY.NS, TCS.NS)")
-        if custom_tickers:
-            custom_list = [t.strip() for t in custom_tickers.split(",") if t.strip()]
-            tickers.extend(custom_list)
-            # Remove duplicates while preserving order
-            tickers = list(dict.fromkeys(tickers))
-        
-        # User Input: Capital
-        capital = st.number_input("Total Capital (INR)", min_value=1000.0, value=100000.0, step=1000.0)
-        
-        # User Input: Risk Profile
-        risk_profile = st.selectbox(
-            "Risk Profile",
-            ["Conservative", "Moderate", "Aggressive"],
-            index=1,
-            help="Conservative: Minimize Volatility. Aggressive: Maximize Sharpe/Return."
-        )
+            tickers = st.multiselect(
+                "Select Assets for Portfolio",
+                options=default_tickers + ["AAPL", "MSFT", "GOOG", "TSLA", "BTC-USD", "ETH-USD", "RELIANCE.NS", "TCS.NS", "INFY.NS", "HDFCBANK.NS"],
+                default=default_tickers,
+                format_func=lambda x: full_ticker_map.get(x, x),
+                key="portfolio_ticker_select"
+            )
+            
+            # Allow custom tickers
+            custom_tickers = st.text_input("Add Custom Tickers (comma separated, e.g. INFY.NS, TCS.NS)")
+            if custom_tickers:
+                custom_list = [t.strip() for t in custom_tickers.split(",") if t.strip()]
+                tickers.extend(custom_list)
+                # Remove duplicates while preserving order
+                tickers = list(dict.fromkeys(tickers))
+            
+            # User Input: Capital
+            capital = st.number_input("Total Capital (INR)", min_value=1000.0, value=100000.0, step=1000.0)
+            
+            # User Input: Risk Profile
+            risk_profile = st.selectbox(
+                "Risk Profile",
+                ["Conservative", "Moderate", "Aggressive"],
+                index=1,
+                help="Conservative: Minimize Volatility. Aggressive: Maximize Sharpe/Return."
+            )
         
         if st.button("Analyze & Optimize Portfolio", type="primary"):
             if not tickers:
@@ -210,6 +211,12 @@ def render_portfolio_tab():
             
             st.metric("Total Projected Value", f"₹{total_projected:,.2f}", 
                       delta=f"₹{total_profit:,.2f} (Abs: {portfolio_abs_return_pct:.1f}%, CAGR: {portfolio_cagr_pct:.1f}%)")
+            
+            # Correlation Matrix
+            st.divider()
+            fig_corr = pm.plot_correlation_matrix(ticker_map=current_map)
+            if fig_corr:
+                st.plotly_chart(fig_corr, use_container_width=True)
             
         st.divider()
         

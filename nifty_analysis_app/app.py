@@ -20,16 +20,51 @@ LOGO_PATH = os.path.join(BASE_DIR, "assets", "logo.png")
 # Page Configuration
 st.set_page_config(page_title="GreenChips Analytics", layout="wide", page_icon=LOGO_PATH)
 
+# Custom CSS for Mobile Optimization
+st.markdown("""
+<style>
+    /* Hide Streamlit Footer */
+    /* Hide Streamlit Footer */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    
+    /* Hide Deploy Button */
+    .stDeployButton {
+        display: none;
+    }
+    
+    /* Adjust padding to prevent logo clipping */
+    .block-container {
+        padding-top: 3.5rem; /* Increased from 2rem to ~3.5rem */
+        padding-bottom: 2rem;
+    }
+    
+    /* Mobile friendly font sizes */
+    h1 {
+        font-size: 1.8rem !important;
+    }
+    h2 {
+        font-size: 1.5rem !important;
+    }
+    h3 {
+        font-size: 1.2rem !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 # Initialize Session State
 if "selected_ticker" not in st.session_state:
     st.session_state["selected_ticker"] = "^NSEI" # Default to Nifty 50
 
 # Main Layout
-st.title("GreenChips Analytics")
+col_logo, col_title = st.columns([1, 15])
+with col_logo:
+    st.image(LOGO_PATH, use_container_width=True)
+with col_title:
+    st.title("Green Chips Analytics")
 
 # --- SIDEBAR: Chatbot ---
 with st.sidebar:
-    st.image(LOGO_PATH, use_container_width=True)
     render_chat()
     st.divider()
     st.subheader("⚙️ Settings")
@@ -40,7 +75,6 @@ with st.sidebar:
 
 # Standard Analysis View
 ticker = st.session_state["selected_ticker"]
-st.subheader(f"Analysis: {ticker}")
 
 # Fetch Data
 with st.spinner("Fetching data..."):
@@ -51,17 +85,39 @@ if not df.empty:
     # Calculate Indicators
     df = calculate_technicals(df)
     
-    # Tabs for different Views
-    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["Charts", "Comparison", "Fundamentals", "Backtest", "Seasonality", "Portfolio Study"])
+    # Persist the active tab state
+    # Using radio button instead of st.tabs because st.tabs resets on rerun by default in many cases,
+    # whereas radio state is preserved in session_state.
     
-    # --- TAB 1: CHARTS ---
-    with tab1:
+    views = ["Charts", "Comparison", "Fundamentals", "Backtest", "Seasonality", "Portfolio Study"]
+    
+    # Ensure current_view is initialized
+    if "current_view" not in st.session_state:
+        st.session_state["current_view"] = "Charts"
+
+    # Navigation (Horizontal Radio behaving like Tabs)
+    selected_view = st.radio(
+        "Navigation", 
+        views, 
+        index=views.index(st.session_state.get("current_view", "Charts")), 
+        horizontal=True, 
+        label_visibility="collapsed",
+        key="current_view_radio"
+    )
+    
+    # Sync with session state for redundancy if needed, though key does it mostly.
+    st.session_state["current_view"] = selected_view
+    
+    st.divider()
+    
+    # --- RENDER SELECTED VIEW ---
+    
+    if selected_view == "Charts":
         render_charts(ticker, df)
         # RSI Section
         render_rsi(df)
     
-    # --- TAB 2: COMPARISON ---
-    with tab2:
+    elif selected_view == "Comparison":
         st.subheader("Compare with another stock")
         
         # Default value from session state if set by chat
@@ -76,20 +132,16 @@ if not df.empty:
             
             render_comparison_view(ticker, comp_ticker)
 
-    # --- TAB 3: FUNDAMENTALS ---
-    with tab3:
+    elif selected_view == "Fundamentals":
         render_fundamentals_tab(ticker)
         
-    # --- TAB 4: BACKTEST ---
-    with tab4:
+    elif selected_view == "Backtest":
         render_backtest_tab(df)
             
-    # --- TAB 5: SEASONALITY ---
-    with tab5:
+    elif selected_view == "Seasonality":
         render_seasonality_tab(df)
 
-    # --- TAB 6: PORTFOLIO STUDY ---
-    with tab6:
+    elif selected_view == "Portfolio Study":
         render_portfolio_tab()
 
 else:

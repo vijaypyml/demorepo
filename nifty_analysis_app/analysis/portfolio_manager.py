@@ -401,3 +401,43 @@ class PortfolioManager:
         )
         
         return fig_dd
+
+    def plot_correlation_matrix(self, ticker_map=None):
+        """
+        Returns a Plotly Figure heatmap of the correlation matrix.
+        """
+        if self.data.empty:
+            return None
+            
+        if ticker_map is None:
+            ticker_map = {}
+            
+        def get_name(ticker):
+            return ticker_map.get(ticker, ticker)
+            
+        # Calculate Correlation of Daily Returns
+        returns = self.data.pct_change().dropna()
+        corr_matrix = returns.corr()
+        
+        # Rename index/columns for display
+        display_labels = [get_name(t) for t in corr_matrix.index]
+        
+        fig = go.Figure(data=go.Heatmap(
+            z=corr_matrix.values,
+            x=display_labels,
+            y=display_labels,
+            colorscale='RdBu', 
+            zmin=-1, zmax=1,
+            text=np.round(corr_matrix.values, 2),
+            texttemplate="%{text}",
+            textfont={"size": 12},
+            hoverongaps = False
+        ))
+        
+        fig.update_layout(
+            title="Correlation Matrix (Daily Returns)",
+            height=600,
+            width=800
+        )
+        
+        return fig
