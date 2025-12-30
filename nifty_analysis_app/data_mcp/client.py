@@ -13,25 +13,54 @@ class YahooFinanceClient:
             self.tickers[symbol] = yf.Ticker(symbol)
         return self.tickers[symbol]
 
+    def _retry_on_rate_limit(self, func, *args, **kwargs):
+        """Retries a function call upon YFRateLimitError with exponential backoff."""
+        import time
+        import random
+        
+        retries = 3
+        delay = 1.0
+        
+        for attempt in range(retries + 1):
+            try:
+                return func(*args, **kwargs)
+            except Exception as e:
+                # Check for rate limit error string or type (yfinance specific or generic exception text)
+                error_msg = str(e).lower()
+                if "rate limit" in error_msg or "too many requests" in error_msg or "429" in error_msg:
+                    if attempt < retries:
+                        sleep_time = delay * (2 ** attempt) + random.uniform(0, 1)
+                        print(f"Rate limit hit. Retrying in {sleep_time:.2f}s...")
+                        time.sleep(sleep_time)
+                        continue
+                raise e
+
     def get_history(self, symbol, period="1y", interval="1d"):
-        ticker = self.get_ticker(symbol)
-        history = ticker.history(period=period, interval=interval)
+        def _fetch():
+            ticker = self.get_ticker(symbol)
+            return ticker.history(period=period, interval=interval)
+            
+        history = self._retry_on_rate_limit(_fetch)
         if history.empty:
             return pd.DataFrame()
         return history
 
     def get_info(self, symbol):
-        ticker = self.get_ticker(symbol)
-        return ticker.info
+        def _fetch():
+            ticker = self.get_ticker(symbol)
+            return ticker.info
+        return self._retry_on_rate_limit(_fetch)
 
     def get_financials(self, symbol):
-        ticker = self.get_ticker(symbol)
-        # Returns a dict of DataFrames
-        return {
-            "income_statement": ticker.financials,
-            "balance_sheet": ticker.balance_sheet,
-            "cash_flow": ticker.cashflow
-        }
+        def _fetch():
+            ticker = self.get_ticker(symbol)
+            # Accessing properties triggers the fetch
+            return {
+                "income_statement": ticker.financials,
+                "balance_sheet": ticker.balance_sheet,
+                "cash_flow": ticker.cashflow
+            }
+        return self._retry_on_rate_limit(_fetch)
     
     def get_nifty100_tickers(self):
         """Returns the list of tickers (All active NSE if available, else Nifty 500, else fallback)."""
