@@ -13,17 +13,18 @@ from ui.backtest_view import render_backtest_tab
 from ui.portfolio_view import render_portfolio_tab
 
 # Page Configuration
-st.set_page_config(page_title="Nifty 100 Analyst", layout="wide", page_icon="📈")
+st.set_page_config(page_title="GreenChips Analytics", layout="wide", page_icon="assets/logo.png")
 
 # Initialize Session State
 if "selected_ticker" not in st.session_state:
     st.session_state["selected_ticker"] = "^NSEI" # Default to Nifty 50
 
 # Main Layout
-st.title("📈 Nifty Stock Analysis")
+st.title("GreenChips Analytics")
 
 # --- SIDEBAR: Chatbot ---
 with st.sidebar:
+    st.image("assets/logo.png", use_container_width=True)
     render_chat()
     st.divider()
     st.subheader("⚙️ Settings")
