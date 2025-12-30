@@ -5,12 +5,19 @@ def generate_investment_memo(ticker, info, financials):
     """
     Generates a comprehensive investment memo acting as a Senior Equity Research Analyst.
     """
-    if not financials or not info:
-        return "Insufficient data to generate report."
+    if not financials:
+        return "Insufficient data to generate report. Financial statements are missing."
+        
+    if not info:
+        info = {} # Fallback to empty if info failed
 
     income_stmt = financials.get('income_statement', pd.DataFrame())
     balance_sheet = financials.get('balance_sheet', pd.DataFrame())
     cash_flow = financials.get('cash_flow', pd.DataFrame())
+    
+    # Check if we have ANY data tables
+    if income_stmt.empty and balance_sheet.empty and cash_flow.empty:
+         return "Insufficient data to generate report. All financial tables are empty."
 
     # Pre-processing: ensure columns are datetime and sorted ascending
     try:
