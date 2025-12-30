@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import pandas as pd
 from ui.chat import render_chat
@@ -12,8 +13,12 @@ from analysis.seasonality import analyze_seasonality
 from ui.backtest_view import render_backtest_tab
 from ui.portfolio_view import render_portfolio_tab
 
+# Path Setup
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+LOGO_PATH = os.path.join(BASE_DIR, "assets", "logo.png")
+
 # Page Configuration
-st.set_page_config(page_title="GreenChips Analytics", layout="wide", page_icon="assets/logo.png")
+st.set_page_config(page_title="GreenChips Analytics", layout="wide", page_icon=LOGO_PATH)
 
 # Initialize Session State
 if "selected_ticker" not in st.session_state:
@@ -24,7 +29,7 @@ st.title("GreenChips Analytics")
 
 # --- SIDEBAR: Chatbot ---
 with st.sidebar:
-    st.image("assets/logo.png", use_container_width=True)
+    st.image(LOGO_PATH, use_container_width=True)
     render_chat()
     st.divider()
     st.subheader("⚙️ Settings")
