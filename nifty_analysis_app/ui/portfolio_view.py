@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from analysis.portfolio_manager import PortfolioManager
+from data_mcp.tools import get_all_equities
 
 def render_portfolio_tab():
     st.header("📊 Market Portfolio Study")
@@ -48,9 +49,25 @@ def render_portfolio_tab():
             if "portfolio_ticker_select" not in st.session_state:
                 st.session_state["portfolio_ticker_select"] = default_tickers
 
+            # Load all equities
+            all_equities = get_all_equities()
+            
+            # Combine defaults with additional known tickers and all equities
+            # ensure defaults are at the start
+            
+            # Create a set for faster lookup and uniqueness
+            # We want: default_tickers + known_tickers + all_equities
+            # But order matters for the dropdown display (defaults first is nice)
+            
+            additional_tickers = ["AAPL", "MSFT", "GOOG", "TSLA", "BTC-USD", "ETH-USD", "RELIANCE.NS", "TCS.NS", "INFY.NS", "HDFCBANK.NS"]
+            
+            # Combine all available options
+            # use dict.fromkeys to preserve order while removing duplicates
+            all_options = list(dict.fromkeys(default_tickers + additional_tickers + all_equities))
+
             tickers = st.multiselect(
                 "Select Assets for Portfolio",
-                options=default_tickers + ["AAPL", "MSFT", "GOOG", "TSLA", "BTC-USD", "ETH-USD", "RELIANCE.NS", "TCS.NS", "INFY.NS", "HDFCBANK.NS"],
+                options=all_options,
                 default=default_tickers,
                 format_func=lambda x: full_ticker_map.get(x, x),
                 key="portfolio_ticker_select"

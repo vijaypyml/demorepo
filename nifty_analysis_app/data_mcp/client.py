@@ -35,9 +35,11 @@ class YahooFinanceClient:
                         continue
                 raise e
 
-    def get_history(self, symbol, period="1y", interval="1d"):
+    def get_history(self, symbol, period="1y", interval="1d", start=None, end=None):
         def _fetch():
             ticker = self.get_ticker(symbol)
+            if start and end:
+                return ticker.history(start=start, end=end, interval=interval)
             return ticker.history(period=period, interval=interval)
             
         history = self._retry_on_rate_limit(_fetch)

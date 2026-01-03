@@ -62,37 +62,42 @@ def render_seasonality_tab(df):
     """)
 
     st.divider()
-    st.subheader("🔍 Deep Dive: Weekly Seasonality")
+    st.subheader("🔍 Deep Dive: Granular Seasonality")
     
-    from analysis.seasonality import prepare_weekly_data, get_yearly_drilldown, get_monthly_drilldown
+    from analysis.seasonality import prepare_weekly_data, get_yearly_drilldown, get_monthly_drilldown, analyze_daily_seasonality
     import calendar
     
-    w_df = prepare_weekly_data(df)
+    drill_type = st.radio("Select Drill-Down View", ["Day-wise Analysis (1-31) 📅", "Weekly Seasonality (1-5)", "Yearly Overview"], horizontal=True)
     
-    drill_type = st.radio("Select Drill-Down View", ["Yearly Analysis", "Monthly Seasonality"], horizontal=True)
-    
-    if drill_type == "Yearly Analysis":
-        years = sorted(w_df['Year'].unique(), reverse=True)
-        sel_year = st.selectbox("Select Year", years)
+    if drill_type == "Day-wise Analysis (1-31) 📅":
+        st.markdown("##### 📅 Day of Month Performance (Average Return)")
+        st.caption("Shows the historical average return for each specific day of the month (e.g. 'Jan 1st'). Useful for finding recurring monthly patterns.")
         
-        pivot, stats = get_yearly_drilldown(w_df, sel_year)
+        daily_pivot = analyze_daily_seasonality(df)
         
-        c1, c2 = st.columns([3, 1])
-        with c1:
-            if not pivot.empty:
-                fig, ax = plt.subplots(figsize=(8, 6))
-                sns.heatmap(pivot, ax=ax, cmap="RdYlGn", center=0, annot=True, fmt=".1%", cbar=False)
-                ax.set_title(f"Weekly Returns - {sel_year}")
-                ax.set_xlabel("Week of Month")
-                st.pyplot(fig)
-            else:
-                st.warning("No data for selected year.")
-                
-        with c2:
-            st.write("**Monthly Totals**")
-            st.dataframe(stats.apply(lambda x: f"{x:.2%}"), height=400)
+        if not daily_pivot.empty:
+            num_days = len(daily_pivot.columns) # Should be 31 usually
+            width = max(10, num_days * 0.4)
+            
+            fig, ax = plt.subplots(figsize=(width, 8))
+            
+            # Using a diverging colormap to see positive/negative days clearly
+            sns.heatmap(daily_pivot, ax=ax, cmap="RdYlGn", center=0, annot=False, fmt=".2%", 
+                        cbar_kws={'label': 'Avg Daily Return'}, linewidths=.1, linecolor='lightgray')
+            
+            ax.set_title("Day of Month Seasonality (Avg Return)")
+            ax.set_xlabel("Day of Month")
+            ax.set_ylabel("Month")
+            
+            st.pyplot(fig)
+            
+            # Show a small table for high conviction days?
+            # Maybe later. For now just the heatmap.
+        else:
+            st.warning("Not enough data for daily analysis.")
 
-    else: # Monthly Seasonality
+    elif drill_type == "Weekly Seasonality (1-5)":
+        w_df = prepare_weekly_data(df)
         months = list(calendar.month_name)[1:]
         sel_month = st.selectbox("Select Month", months)
         
@@ -118,3 +123,25 @@ def render_seasonality_tab(df):
             disp_stats['Win Rate'] = disp_stats['Win Rate'].apply(lambda x: f"{x:.0%}")
             disp_stats['Avg Return'] = disp_stats['Avg Return'].apply(lambda x: f"{x:.2%}")
             st.dataframe(disp_stats)
+            
+    elif drill_type == "Yearly Overview":
+        w_df = prepare_weekly_data(df)
+        years = sorted(w_df['Year'].unique(), reverse=True)
+        sel_year = st.selectbox("Select Year", years)
+        
+        pivot, stats = get_yearly_drilldown(w_df, sel_year)
+        
+        c1, c2 = st.columns([3, 1])
+        with c1:
+            if not pivot.empty:
+                fig, ax = plt.subplots(figsize=(8, 6))
+                sns.heatmap(pivot, ax=ax, cmap="RdYlGn", center=0, annot=True, fmt=".1%", cbar=False)
+                ax.set_title(f"Weekly Returns - {sel_year}")
+                ax.set_xlabel("Week of Month")
+                st.pyplot(fig)
+            else:
+                st.warning("No data for selected year.")
+                
+        with c2:
+            st.write("**Monthly Totals**")
+            st.dataframe(stats.apply(lambda x: f"{x:.2%}"), height=400)

@@ -9,8 +9,12 @@ def render_fundamentals_tab(ticker):
     if st.button("Generate Investment Memo"):
         with st.spinner("Analyzing Financial Statements..."):
             info, financials = get_stock_fundamentals(ticker)
-            report = generate_investment_memo(ticker, info, financials)
-            st.markdown(report)
+            report_data = generate_investment_memo(ticker, info, financials)
+            
+            if isinstance(report_data, dict):
+                st.markdown(report_data["dashboard"])
+            else:
+                st.markdown(report_data)
             
             with st.expander("View Raw Financial Data"):
                 st.write("Income Statement", financials.get('income_statement'))

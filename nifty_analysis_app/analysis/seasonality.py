@@ -108,15 +108,41 @@ def prepare_weekly_data(df):
     w_df['Week'] = w_df['Day'].apply(get_week_of_month)
     w_df['Return'] = w_df['Close'].pct_change()
     
-    # Aggregate Returns by Year, Month, Week
-    # We want the cumulative return for that week?? Or average daily return?
-    # Usually "Weekly Seasonality" implies the return of holding through that week.
-    # Simple sum of % changes is an approximation, or product of (1+r).
-    # Let's use Sum for simplicity and consistency with previous heatmaps, or compound if precision needed.
-    # Group by Year, Month, Week -> Sum Returns
+    # Filter out the very first row NaN from pct_change
+    w_df = w_df.dropna(subset=['Return'])
+    
+    # Use Sum of returns for the week/month/year grouping?
+    # Actually for "Week of Month Analysis" usually users want to see "How does the market perform in Week 1 of Jan?"
+    # So we group by Month+Week across all years.
     weekly = w_df.groupby(['Year', 'Month', 'Month_Name', 'Week'])['Return'].sum().reset_index()
     
     return weekly
+
+def analyze_daily_seasonality(df):
+    """
+    Analyzes seasonality by specific Day of Month (1-31).
+    Returns a Pivot Table (Month x Day) and Heatmap Data.
+    """
+    if df.empty: return pd.DataFrame()
+    
+    d_df = df.copy()
+    d_df['Day'] = d_df.index.day
+    d_df['Month_Name'] = d_df.index.strftime('%B')
+    d_df['Return'] = d_df['Close'].pct_change()
+    d_df = d_df.dropna()
+    
+    # Group by Month + Day (Average Daily Return for that specific day across all years)
+    # e.g. Average return of "Jan 1st" across 10 years.
+    daily_stats = d_df.groupby(['Month_Name', 'Day'])['Return'].mean().reset_index()
+    
+    # Pivot: Index=Month_Name, Columns=Day (1-31), Values=Avg Return
+    pivot = daily_stats.pivot(index='Month_Name', columns='Day', values='Return')
+    
+    # Sort Months
+    ordered_months = list(calendar.month_name)[1:]
+    pivot = pivot.reindex(ordered_months)
+    
+    return pivot
 
 def get_yearly_drilldown(weekly_df, selected_year):
     """

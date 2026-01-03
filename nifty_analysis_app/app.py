@@ -12,6 +12,8 @@ from analysis.backtest import run_backtest
 from analysis.seasonality import analyze_seasonality
 from ui.backtest_view import render_backtest_tab
 from ui.portfolio_view import render_portfolio_tab
+from ui.options import render_options_tab
+from ui.fii_dii import render_fii_dii_tab
 
 # Path Setup
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -73,14 +75,66 @@ with st.sidebar:
 
 # --- MAIN AREA ---
 
+# Navigation (Moved up for data dependencies)
+views = ["Charts", "Comparison", "Fundamentals", "Backtest", "Seasonality", "Portfolio Study", "Options", "Institutional Activity 🏦"]
+
+# Ensure current_view is initialized
+if "current_view" not in st.session_state:
+    st.session_state["current_view"] = "Charts"
+
+# Navigation (Horizontal Radio behaving like Tabs)
+selected_view = st.radio(
+    "Navigation", 
+    views, 
+    index=views.index(st.session_state.get("current_view", "Charts")), 
+    horizontal=True, 
+    label_visibility="collapsed",
+    key="current_view_radio"
+)
+
+# Sync with session state
+st.session_state["current_view"] = selected_view
+
 # Standard Analysis View
 ticker = st.session_state["selected_ticker"]
 
 # Fetch Data
 with st.spinner("Fetching data..."):
-    # Default to 2y for better backtesting/seasonality context
-    df = get_stock_price_history(ticker, period=data_period, interval=data_interval)
-
+    # --- Data Fetching ---
+    with st.spinner(f"Fetching data for {ticker}..."):
+        # Special logic for Seasonality to ensure first month is captured (Missing Month Fix)
+        if selected_view == "Seasonality":
+            try:
+                import datetime
+                from dateutil.relativedelta import relativedelta
+                
+                # Calculate start date based on selected period logic in seasonality_view
+                # Default to 10 years if not set, or parse from period string
+                # Simpler: just fetch max buffer needed (e.g. 20 years + 2 months) to cover all cases
+                # or better, move this logic inside seasonality view? No, fetch happens here.
+                
+                # Let's assume standard period first, but we need start/end.
+                # If period is "10y", we need 10y + 2 months buffer.
+                
+                # Parsing period text to years
+                # Default "2y" from portfolio settings might track here? 
+                # Actually Seasonality usually has its own selector inside the view or uses the global one?
+                # The current app uses global 'period' var from sidebar/settings.
+                
+                # Let's map 'period' string to years
+                years_map = {"1y": 1, "2y": 2, "5y": 5, "10y": 10, "max": 20} # Changed "Max" to "max" to match data_period options
+                years_back = years_map.get(data_period, 10) # default 10 if unknown
+                
+                end_date = datetime.date.today()
+                start_date = end_date - relativedelta(years=years_back) - relativedelta(months=2) # 2 month buffer
+                
+                df = get_stock_price_history(ticker, start=start_date, end=end_date, interval=data_interval)
+            except Exception as e:
+                print(f"Error calculating buffer date: {e}")
+                df = get_stock_price_history(ticker, period=data_period, interval=data_interval)
+        else:
+            df = get_stock_price_history(ticker, period=data_period, interval=data_interval) # Use cached default
+            
 if not df.empty:
     # Calculate Indicators
     df = calculate_technicals(df)
@@ -89,24 +143,7 @@ if not df.empty:
     # Using radio button instead of st.tabs because st.tabs resets on rerun by default in many cases,
     # whereas radio state is preserved in session_state.
     
-    views = ["Charts", "Comparison", "Fundamentals", "Backtest", "Seasonality", "Portfolio Study"]
-    
-    # Ensure current_view is initialized
-    if "current_view" not in st.session_state:
-        st.session_state["current_view"] = "Charts"
 
-    # Navigation (Horizontal Radio behaving like Tabs)
-    selected_view = st.radio(
-        "Navigation", 
-        views, 
-        index=views.index(st.session_state.get("current_view", "Charts")), 
-        horizontal=True, 
-        label_visibility="collapsed",
-        key="current_view_radio"
-    )
-    
-    # Sync with session state for redundancy if needed, though key does it mostly.
-    st.session_state["current_view"] = selected_view
     
     st.divider()
     
@@ -143,6 +180,12 @@ if not df.empty:
 
     elif selected_view == "Portfolio Study":
         render_portfolio_tab()
+        
+    elif selected_view == "Options":
+        render_options_tab()
+
+    elif selected_view == "Institutional Activity 🏦":
+        render_fii_dii_tab()
 
 else:
     st.error(f"Could not fetch data for {ticker}. Please check the symbol.")
