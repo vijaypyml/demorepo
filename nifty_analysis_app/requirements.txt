@@ -8,3 +8,7 @@ matplotlib
 PyPortfolioOpt
 scipy
 nsepython
+textblob
+wordcloud
+duckduckgo-search
+beautifulsoup4
