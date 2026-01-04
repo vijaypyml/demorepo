@@ -15,6 +15,7 @@ from ui.portfolio_view import render_portfolio_tab
 from ui.options import render_options_tab
 from ui.fii_dii import render_fii_dii_tab
 from ui.news_view import render_news_view
+from ui.market_pulse import render_market_pulse_view
 
 # Path Setup
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -77,7 +78,7 @@ with st.sidebar:
 # --- MAIN AREA ---
 
 # Navigation (Moved up for data dependencies)
-views = ["Charts", "Comparison", "Fundamentals", "Backtest", "Seasonality", "Portfolio Study", "Options", "Institutional Activity 🏦", "News & Sentiment 📰"]
+views = ["Charts", "Comparison", "Fundamentals", "Backtest", "Seasonality", "Portfolio Study", "Options", "Institutional Activity 🏦", "News & Sentiment 📰", "Market Pulse 💗"]
 
 # Ensure current_view is initialized
 if "current_view" not in st.session_state:
@@ -190,6 +191,9 @@ if not df.empty:
 
     elif selected_view == "News & Sentiment 📰":
         render_news_view(ticker)
+
+    elif selected_view == "Market Pulse 💗":
+        render_market_pulse_view()
 
 else:
     st.error(f"Could not fetch data for {ticker}. Please check the symbol.")
