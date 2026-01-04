@@ -56,34 +56,53 @@ class MarketScanner:
             
             results = []
             
+            # Check column levels to determine structure
+            is_multi_ticker = len(tickers) > 1
+            
             for ticker in tickers:
                 try:
-                    # Handle single ticker vs multi ticker structure
-                    if len(tickers) == 1:
-                        df = data
-                        vol_col = 'Volume'
-                        close_col = 'Adj Close'
+                    df = pd.DataFrame() # Sentinel
+                    
+                    if not is_multi_ticker:
+                         df = data
                     else:
-                        df = data[ticker]
-                        vol_col = 'Volume'
-                        close_col = 'Adj Close' # or 'Close' if Adj Close not available
+                        # Multi-level columns
+                        # Case 1: Ticker is Top Level (group_by='ticker') -> data[ticker] works
+                        if isinstance(data.columns, pd.MultiIndex) and ticker in data.columns.get_level_values(0):
+                            df = data[ticker]
+                        # Case 2: Price is Top Level -> data.xs(ticker, level=1, axis=1)
+                        elif isinstance(data.columns, pd.MultiIndex) and ticker in data.columns.get_level_values(1):
+                             df = data.xs(ticker, level=1, axis=1)
+                        # Case 3: Flat Columns but we have prefix? Unlikely with 1d interval.
+                        
+                    if df.empty: 
+                        # print(f"Empty data for {ticker}")
+                        continue
                     
-                    if df.empty: continue
+                    # Normalize columns
+                    # If single level, columns are 'Open', 'Close' etc.
                     
-                    # Ensure we have data
-                    if len(df) < 5: continue
+                    # Check needed columns
+                    current_cols = df.columns.tolist()
+                    close_col = 'Adj Close' if 'Adj Close' in current_cols else 'Close'
+                    vol_col = 'Volume'
+                    
+                    if close_col not in current_cols or vol_col not in current_cols:
+                        # print(f"Missing columns for {ticker}: {current_cols}")
+                        continue
+
+                    # Ensure we have enough rows
+                    if len(df) < 5: 
+                         continue
                     
                     curr_price = df[close_col].iloc[-1]
                     avg_vol = df[vol_col].tail(20).mean()
                     
-                    # Filter: Volume > $500k approx (say 4 Cr INR or just > 50k shares to be safe)
-                    # Let's use value: Price * Vol roughly. 
-                    # 500k USD ~ 4 Crores INR.
-                    # Let's just use a simple liquidity filter: Avg Vol > 50,000 shares
+                    # Filter
                     if avg_vol < 10000: continue 
 
                     # 1 Week Return (5 trading days)
-                    wk_start = df[close_col].iloc[-6] # 5 days ago
+                    wk_start = df[close_col].iloc[-6] 
                     wk_ret = (curr_price - wk_start) / wk_start
                     
                     # 1 Month Return (20 trading days)
@@ -99,7 +118,8 @@ class MarketScanner:
                         "Volume": avg_vol
                     })
                     
-                except Exception as e:
+                except Exception as ex:
+                    print(f"Error processing {ticker}: {ex}")
                     continue
             
             res_df = pd.DataFrame(results)

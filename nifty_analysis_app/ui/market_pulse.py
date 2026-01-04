@@ -60,7 +60,7 @@ def render_market_pulse_view():
             
             total = len(weekly_losers)
             
-            for i, row in weekly_losers.iterrows():
+            for i, (index, row) in enumerate(weekly_losers.iterrows()):
                 ticker = row['Ticker']
                 status_text.text(f"Analyzing {ticker}...")
                 
